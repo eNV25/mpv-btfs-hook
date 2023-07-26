@@ -31,7 +31,8 @@ local mountdir = "/tmp/mpvbtfs"
 
 --------------------------------------------------------------------------------
 
-local mp = assert(mp)
+local mp = require("mp")
+local utils = require("mp.utils")
 
 local shellquote = function(s)
 	return "'" .. s:gsub("'", [['\'']]) .. "'"
@@ -44,32 +45,78 @@ if _VERSION == "Lua 5.1" then
 	end
 end
 
--- list files from the mountpoint that should added to the playlist
-local list_files = function(mountpoint)
-	local p = assert(io.popen([[
-	mountpoint=]] .. shellquote(mountpoint) .. "\n" .. [[
-	# -V = version sort. should sort anime episodes correctly
-	find "$mountpoint" -type f | sort -V
-	]]))
-	local files = {}
-	for line in p:lines() do
-		table.insert(files, line)
-		files[line] = #files -- save the position for the sort below
+local MPV_MIME_TYPES = {};
+
+(function() -- init MPV_MIME_TYPES
+	-- get XDG_DATA_DIRS and add a final semicolon to make it easier to parse
+	local XDG_DATA_DIRS = os.getenv("XDG_DATA_DIRS") or "/usr/share"
+	if not XDG_DATA_DIRS:match(":$") then
+		XDG_DATA_DIRS = XDG_DATA_DIRS .. ":"
 	end
-	p:close()
-	-- put files before directories but keep the sort order
-	local count_slashes = function(path)
-		return #path - #path:gsub("/", "")
-	end
-	table.sort(files, function(p1, p2)
-		local c1 = count_slashes(p1)
-		local c2 = count_slashes(p2)
-		if c1 ~= c2 then
-			return c1 < c2
-		else
-			return files[p1] < files[p2]
+	for path in XDG_DATA_DIRS:gmatch("(.-):") do
+		-- build path and make sure it is absolute
+		path = utils.join_path(path, "applications/mpv.desktop")
+		if not path:match("^/") then
+			goto continue
 		end
-	end)
+
+		-- find the first mpv.desktop in XDG_DATA_DIRS
+		local f = io.open(path)
+		if not f then
+			goto continue
+		end
+
+		-- parse the first MimeType= line
+		for line in f:lines() do
+			local mime_types = line:match("^MimeType=(.*)$")
+			if mime_types then
+				for mime_type in mime_types:gmatch("(.-);") do
+					MPV_MIME_TYPES[mime_type] = true
+				end
+				return
+			end
+		end
+
+		::continue::
+	end
+end)()
+
+-- list files from the mountpoint that should added to the playlist
+-- TODO: implement natural order sorting
+local list_files = function(mountpoint)
+	local files = {}
+	local dirs = { mountpoint }
+
+	while #dirs > 0 do
+		-- pop first directory
+		local current = dirs[1]
+		table.remove(dirs, 1)
+
+		-- append media files
+		local subfiles = utils.readdir(current, "files")
+		table.sort(subfiles)
+		for _, filename in ipairs(subfiles) do
+			local file = utils.join_path(current, filename)
+
+			local mime_type = mp.command_native({
+				name = "subprocess",
+				args = { "file", "--brief", "--mime-type", file },
+				capture_stdout = true,
+			}).stdout:match("[%S]*") -- %S: not whitespace
+
+			if MPV_MIME_TYPES[mime_type] then
+				table.insert(files, file)
+			end
+		end
+
+		-- append subdirectories to queue
+		local subdirs = utils.readdir(current, "dirs")
+		table.sort(subdirs)
+		for _, dirname in ipairs(subdirs) do
+			table.insert(dirs, utils.join_path(current, dirname))
+		end
+	end
+
 	return files
 end
 
