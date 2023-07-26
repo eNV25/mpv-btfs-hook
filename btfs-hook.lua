@@ -29,6 +29,21 @@ local btfs_args = {
 
 local mountdir = "/tmp/mpvbtfs"
 
+--------------------------------------------------------------------------------
+
+local mp = assert(mp)
+
+local shellquote = function(s)
+	return "'" .. s:gsub("'", [['\'']]) .. "'"
+end
+
+local exec_ok = os.execute
+if _VERSION == "Lua 5.1" then
+	exec_ok = function(...)
+		return 0 == os.execute(...)
+	end
+end
+
 -- list files from the mountpoint that should added to the playlist
 local list_files = function(mountpoint)
 	local p = assert(io.popen([[
@@ -56,19 +71,6 @@ local list_files = function(mountpoint)
 		end
 	end)
 	return files
-end
-
---------------------------------------------------------------------------------
-
-shellquote = function(s)
-	return "'" .. s:gsub("'", "'\\''") .. "'"
-end
-
-local exec_ok = os.execute
-if _VERSION == "Lua 5.1" then
-	exec_ok = function(...)
-		return 0 == os.execute(...)
-	end
 end
 
 --------------------------------------------------------------------------------
