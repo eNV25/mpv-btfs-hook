@@ -70,12 +70,15 @@ local MPV_MIME_TYPES = {};
 		for line in f:lines() do
 			local mime_types = line:match("^MimeType=(.*)$")
 			if mime_types then
+				f:close()
 				for mime_type in mime_types:gmatch("(.-);") do
 					MPV_MIME_TYPES[mime_type] = true
 				end
 				return
 			end
 		end
+
+		f:close()
 
 		::continue::
 	end
