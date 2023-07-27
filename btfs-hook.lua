@@ -71,6 +71,9 @@ local MPV_MIME_TYPES = {};
 			local mime_types = line:match("^MimeType=(.*)$")
 			if mime_types then
 				f:close()
+				if not mime_types:match(";$") then
+					mime_types = mime_types .. ";"
+				end
 				for mime_type in mime_types:gmatch("(.-);") do
 					MPV_MIME_TYPES[mime_type] = true
 				end
@@ -101,13 +104,17 @@ local list_files = function(mountpoint)
 		for _, filename in ipairs(subfiles) do
 			local file = utils.join_path(current, filename)
 
+			msg.verbose("checking " .. file)
+
 			local mime_type = mp.command_native({
-				name = "subprocess",
-				args = { "file", "--brief", "--mime-type", file },
-				capture_stdout = true,
-			}).stdout:match("[%S]*") -- %S: not whitespace
+						name = "subprocess",
+						args = { "file", "--brief", "--mime-type", file },
+						capture_stdout = true,
+					}).stdout
+					:match("[%S]*") -- %S: not whitespace
 
 			if MPV_MIME_TYPES[mime_type] then
+				msg.verbose("using " .. file)
 				table.insert(files, file)
 			end
 		end
