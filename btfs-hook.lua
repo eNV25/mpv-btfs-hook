@@ -40,9 +40,18 @@ local mp = require("mp")
 local utils = require("mp.utils")
 local msg = require("mp.msg")
 
-local MPV_MEDIA_TYPES = {};
+-- predeclare with some common file types, for faster loading
+local MPV_MEDIA_TYPES = {
+	[".mp3"] = true,
+	[".ogg"] = true,
+	[".mkv"] = true,
+	[".mp4"] = true,
+	[".webm"] = true,
+};
 
-(function() -- init MPV_MIME_TYPES
+-- init MPV_MEDIA_TYPES with supported mime types from mpv.desktop,
+-- for use with file --brief --mime-type
+(function()
 	-- get XDG_DATA_DIRS and add a final colon to make it easier to parse
 	local XDG_DATA_DIRS = os.getenv("XDG_DATA_DIRS") or "/usr/share"
 	if not XDG_DATA_DIRS:match(":$") then
