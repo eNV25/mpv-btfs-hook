@@ -40,7 +40,7 @@ local mp = require("mp")
 local utils = require("mp.utils")
 local msg = require("mp.msg")
 
-local MPV_MIME_TYPES = {};
+local MPV_MEDIA_TYPES = {};
 
 (function() -- init MPV_MIME_TYPES
 	-- get XDG_DATA_DIRS and add a final colon to make it easier to parse
@@ -70,7 +70,7 @@ local MPV_MIME_TYPES = {};
 					mime_types = mime_types .. ";"
 				end
 				for mime_type in mime_types:gmatch("(.-);") do
-					MPV_MIME_TYPES[mime_type] = true
+					MPV_MEDIA_TYPES[mime_type] = true
 				end
 				return
 			end
@@ -81,6 +81,11 @@ local MPV_MIME_TYPES = {};
 		::continue::
 	end
 end)()
+
+-- return shortest file extension
+local file_ext = function(file)
+	return file:match("^.+(%.[^.][^.]-)$")
+end
 
 -- list files from the mountpoint that should added to the playlist
 -- TODO: implement natural order sorting
@@ -93,24 +98,31 @@ local list_files = function(mountpoint)
 		local current = dirs[1]
 		table.remove(dirs, 1)
 
-		-- append media files
+		-- append media files, while caching file extensions for future use
 		local subfiles = utils.readdir(current, "files")
 		table.sort(subfiles)
 		for _, filename in ipairs(subfiles) do
+			local ext = file_ext(filename)
 			local file = utils.join_path(current, filename)
 
 			msg.verbose("checking " .. file)
 
-			local mime_type = mp.command_native({
-						name = "subprocess",
-						args = { "file", "--brief", "--mime-type", file },
-						capture_stdout = true,
-					}).stdout
-					:match("[%S]*") -- %S: not whitespace
-
-			if MPV_MIME_TYPES[mime_type] then
-				msg.verbose("using " .. file)
+			if ext and MPV_MEDIA_TYPES[ext] then
 				table.insert(files, file)
+			else
+				local mime_type = mp.command_native({
+							name = "subprocess",
+							args = { "file", "--brief", "--mime-type", file },
+							capture_stdout = true,
+						}).stdout
+						:match("[%S]*") -- strip whitespace
+
+				if mime_type and MPV_MEDIA_TYPES[mime_type] then
+					msg.verbose("using " .. file)
+
+					MPV_MEDIA_TYPES[ext] = true
+					table.insert(files, file)
+				end
 			end
 		end
 
