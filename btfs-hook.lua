@@ -155,6 +155,7 @@ local mounted_points = {}
 
 local is_mounted = function(mountpoint)
 	return mp.command_native({ name = "subprocess", args = { "mountpoint", "-q", mountpoint } }).status == 0
+	--return mp.command_native({ name = "subprocess", args = { "mount" }, capture_stdout = true }).stdout:match(" " .. mountpoint:gsub("([%W])", "%%%1") .. " ")
 end
 
 local do_unmount = function(url, mountpoint)

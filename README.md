@@ -23,6 +23,9 @@ the clipboard to the playlist).
 - mkdir -p
 - sleep
 
+To use mount instead of mountpoint -q, comment out and switch the implementation
+by editing the script.
+
 # Advantages Over Peerflix and Webtorrent
 
 Peerflix and Webtorrent are both written in javascript and have to be
