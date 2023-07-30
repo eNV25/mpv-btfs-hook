@@ -42,8 +42,11 @@ local msg = require("mp.msg")
 
 -- predeclare with some common file types, for faster loading
 local MPV_MEDIA_TYPES = {
+	[".flac"] = true,
 	[".mp3"] = true,
 	[".ogg"] = true,
+	[".m3u"] = true,
+	[".m3u8"] = true,
 	[".mkv"] = true,
 	[".mp4"] = true,
 	[".webm"] = true,
