@@ -1,6 +1,6 @@
 --[[
 
-script to make mpv play torrents/magnets directly using btfs
+script to make mpv play torrents/magnets directly using btfs https://github.com/johang/btfs
 
 original script: https://gist.github.com/huglovefan/4c68bc40661b6701ca5fc6ce1157f192
 
