@@ -167,7 +167,14 @@ end
 local do_mount = function(url, mountpoint)
 	mp.command_native({ name = "subprocess", args = { "mkdir", "-p", mountpoint } })
 
-	mp.command_native({ name = "subprocess", args = { "btfs", url, mountpoint } })
+	local args = { "btfs" }
+	for _, v in ipairs(btfs_args) do
+		table.insert(args, v)
+	end
+	table.insert(args, url)
+	table.insert(args, mountpoint)
+
+	mp.command_native({ name = "subprocess", args = args })
 	mounted_points[url] = mountpoint
 
 	msg.verbose("waiting for files")
