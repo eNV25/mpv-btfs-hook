@@ -41,14 +41,68 @@ local msg = require("mp.msg")
 
 -- predeclare with some common file types, for faster loading
 local MPV_MEDIA_TYPES = {
+	[".aiff"] = true,
+	[".ape"] = true,
+	[".au"] = true,
 	[".flac"] = true,
+	[".m4a"] = true,
+	[".mka"] = true,
 	[".mp3"] = true,
+	[".oga"] = true,
 	[".ogg"] = true,
+	[".ogm"] = true,
+	[".opus"] = true,
+	[".wav"] = true,
+	[".wma"] = true,
+
 	[".m3u"] = true,
 	[".m3u8"] = true,
+
+	[".3g2"] = true,
+	[".3gp"] = true,
+	[".avi"] = true,
+	[".flv"] = true,
+	[".m2ts"] = true,
+	[".m4v"] = true,
+	[".mj2"] = true,
 	[".mkv"] = true,
+	[".mov"] = true,
 	[".mp4"] = true,
+	[".mpeg"] = true,
+	[".mpg"] = true,
+	[".ogv"] = true,
+	[".rmvb"] = true,
 	[".webm"] = true,
+	[".wmv"] = true,
+	[".y4m"] = true,
+
+	[".avif"] = false,
+	[".bmp"] = false,
+	[".gif"] = false,
+	[".j2k"] = false,
+	[".jp2"] = false,
+	[".jpeg"] = false,
+	[".jpg"] = false,
+	[".jxl"] = false,
+	[".png"] = false,
+	[".svg"] = false,
+	[".tga"] = false,
+	[".tif"] = false,
+	[".tiff"] = false,
+	[".webp"] = false,
+
+	[".dfxp"] = false,
+	[".html"] = false,
+	[".lrc"] = false,
+	[".sami"] = false,
+	[".smi"] = false,
+	[".srt"] = false,
+	[".sub"] = false,
+	[".ttml"] = false,
+	[".txt"] = false,
+	[".usf"] = false,
+	[".vtt"] = false,
+	[".xml"] = false,
 };
 
 -- init MPV_MEDIA_TYPES with supported mime types from mpv.desktop,
@@ -120,7 +174,7 @@ local list_files = function(mountpoint)
 
 			if ext and MPV_MEDIA_TYPES[ext] then
 				table.insert(files, file)
-			else
+			elseif MPV_MEDIA_TYPES[ext] == nil then
 				local mime_type = mp.command_native({
 							name = "subprocess",
 							args = { "file", "--brief", "--mime-type", file },
