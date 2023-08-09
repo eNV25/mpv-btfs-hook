@@ -152,8 +152,27 @@ local file_ext = function(file)
 	return file:match("^.+(%.[^.][^.]-)$")
 end
 
+-- alphanum sorting for humans in Lua, copied from autoload.lua
+-- http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua
+local alphanumsort = function(filenames)
+	local padnum = function(n, d)
+		return #d > 0 and ("%03d%s%.12f"):format(#n, n, tonumber(d) / (10 ^ #d)) or ("%03d%s"):format(#n, n)
+	end
+
+	local tuples = {}
+	for i, f in ipairs(filenames) do
+		tuples[i] = { f:lower():gsub("0*(%d+)%.?(%d*)", padnum), f }
+	end
+	table.sort(tuples, function(a, b)
+		return a[1] == b[1] and #b[2] < #a[2] or a[1] < b[1]
+	end)
+	for i, tuple in ipairs(tuples) do
+		filenames[i] = tuple[2]
+	end
+	return filenames
+end
+
 -- list files from the mountpoint that should added to the playlist
--- TODO: implement natural order sorting
 local list_files = function(mountpoint)
 	local files = {}
 	local dirs = { mountpoint }
@@ -164,8 +183,7 @@ local list_files = function(mountpoint)
 		table.remove(dirs, 1)
 
 		-- append media files, while caching file extensions for future use
-		local subfiles = utils.readdir(current, "files")
-		table.sort(subfiles)
+		local subfiles = alphanumsort(utils.readdir(current, "files"))
 		for _, filename in ipairs(subfiles) do
 			local ext = file_ext(filename)
 			local file = utils.join_path(current, filename)
@@ -192,8 +210,7 @@ local list_files = function(mountpoint)
 		end
 
 		-- append subdirectories to queue
-		local subdirs = utils.readdir(current, "dirs")
-		table.sort(subdirs)
+		local subdirs = alphanumsort(utils.readdir(current, "dirs"))
 		for _, dirname in ipairs(subdirs) do
 			table.insert(dirs, utils.join_path(current, dirname))
 		end
