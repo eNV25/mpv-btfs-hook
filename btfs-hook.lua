@@ -251,7 +251,6 @@ local do_mount = function(url, mountpoint)
 	table.insert(args, mountpoint)
 
 	mp.command_native({ name = "subprocess", args = args })
-	mounted_points[url] = mountpoint
 
 	msg.verbose("waiting for files")
 
@@ -259,6 +258,7 @@ local do_mount = function(url, mountpoint)
 	while is_mounted(mountpoint) do
 		if #utils.readdir(mountpoint) > 0 then
 			msg.verbose("files found")
+			mounted_points[url] = mountpoint
 			return true
 		end
 		mp.command_native({ name = "subprocess", args = { "sleep", "0.25" } })
