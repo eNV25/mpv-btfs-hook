@@ -6,8 +6,8 @@ original script: https://gist.github.com/huglovefan/4c68bc40661b6701ca5fc6ce1157
 
 requires:
 - btfs
+- btfsstat
 - file --brief --mime-type
-- mountpoint -q
 - umount
 - rmdir
 - mkdir -p
@@ -225,8 +225,13 @@ end
 local mounted_points = {}
 
 local is_mounted = function(mountpoint)
-	return mp.command_native({ name = "subprocess", args = { "mountpoint", "-q", mountpoint } }).status == 0
-	--return mp.command_native({ name = "subprocess", args = { "mount" }, capture_stdout = true }).stdout:match(" " .. mountpoint:gsub("([%W])", "%%%1") .. " ")
+	return mp.command_native({
+		name = "subprocess",
+		args = { "btfsstat", mountpoint },
+		capture_size = 0,
+		capture_stdout = true,
+		capture_stderr = true,
+	}).status == 0
 end
 
 local do_unmount = function(url, mountpoint)

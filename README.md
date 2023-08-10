@@ -16,15 +16,12 @@ the clipboard to the playlist).
 # Requirements
 
 - btfs
+- btfsstat
 - file --brief --mime-type
-- mountpoint -q, util-linux
 - umount
 - rmdir
 - mkdir -p
 - sleep
-
-To use mount instead of mountpoint -q, comment out and switch the implementation
-by editing the script.
 
 # Advantages Over Peerflix and Webtorrent
 
