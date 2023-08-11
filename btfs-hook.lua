@@ -20,7 +20,7 @@ usage:
 ]]
 
 -- see "btfs --help"
-local btfs_args = {
+local BTFS_ARGS = {
 	-- temporary directory to store downloaded data
 	-- '--data-directory=', Using xdg by default
 	-- you may want to make sure this is on a real filesystem and not tmpfs
@@ -31,13 +31,15 @@ local btfs_args = {
 	"--max-upload-rate=500",
 }
 
-local mountdir = "/tmp/mpvbtfs"
+local MOUNT_DIR = "/tmp/mpvbtfs"
 
 --------------------------------------------------------------------------------
 
 local mp = require("mp")
 local utils = require("mp.utils")
 local msg = require("mp.msg")
+
+--------------------------------------------------------------------------------
 
 -- predeclare with some common file types, for faster loading
 local MPV_MEDIA_TYPES = {
@@ -103,49 +105,50 @@ local MPV_MEDIA_TYPES = {
 	[".usf"] = false,
 	[".vtt"] = false,
 	[".xml"] = false,
-};
+}
 
--- init MPV_MEDIA_TYPES with supported mime types from mpv.desktop,
--- for use with file --brief --mime-type
-(function()
-	-- get XDG_DATA_DIRS and add a final colon to make it easier to parse
-	local XDG_DATA_DIRS = os.getenv("XDG_DATA_DIRS") or "/usr/share"
-	if not XDG_DATA_DIRS:match(":$") then
-		XDG_DATA_DIRS = XDG_DATA_DIRS .. ":"
-	end
-	for path in XDG_DATA_DIRS:gmatch("(.-):") do
-		-- build path and make sure it is absolute
-		path = utils.join_path(path, "applications/mpv.desktop")
-		if not path:match("^/") then
-			goto continue
-		end
-
-		-- find the first mpv.desktop in XDG_DATA_DIRS
-		local f = io.open(path)
-		if not f then
-			goto continue
-		end
-
-		-- parse the first MimeType= line
-		for line in f:lines() do
-			local mime_types = line:match("^MimeType=(.*)$")
-			if mime_types then
-				f:close()
-				if not mime_types:match(";$") then
-					mime_types = mime_types .. ";"
+setmetatable(MPV_MEDIA_TYPES, {
+	__index = function(table, key)
+		if not rawget(table, "init") and key:match("^[^/]+/[^/]+$") then
+			-- init MPV_MEDIA_TYPES with supported mime types from mpv.desktop,
+			-- for use with file --brief --mime-type
+			(function()
+				-- get XDG_DATA_DIRS and add a final colon to make it easier to parse
+				local XDG_DATA_DIRS = os.getenv("XDG_DATA_DIRS") or "/usr/share"
+				if not XDG_DATA_DIRS:match(":$") then
+					XDG_DATA_DIRS = XDG_DATA_DIRS .. ":"
 				end
-				for mime_type in mime_types:gmatch("(.-);") do
-					MPV_MEDIA_TYPES[mime_type] = true
+				for path in XDG_DATA_DIRS:gmatch("(.-):") do
+					-- build path and make sure it is absolute
+					path = utils.join_path(path, "applications/mpv.desktop")
+					if path:match("^/") then
+						-- find the first mpv.desktop in XDG_DATA_DIRS
+						local f = io.open(path)
+						if f then
+							-- parse the first MimeType= line
+							for line in f:lines() do
+								local mime_types = line:match("^MimeType=(.*)$")
+								if mime_types then
+									f:close()
+									if not mime_types:match(";$") then
+										mime_types = mime_types .. ";"
+									end
+									for mime_type in mime_types:gmatch("(.-);") do
+										rawset(table, mime_type, true)
+									end
+									return
+								end
+							end
+							f:close()
+						end
+					end
 				end
-				return
-			end
+			end)()
+			rawset(table, "init", true)
 		end
-
-		f:close()
-
-		::continue::
-	end
-end)()
+		return rawget(table, key)
+	end,
+})
 
 -- return shortest file extension
 local file_ext = function(file)
@@ -244,7 +247,7 @@ local do_mount = function(url, mountpoint)
 	mp.command_native({ name = "subprocess", args = { "mkdir", "-p", mountpoint } })
 
 	local args = { "btfs" }
-	for _, v in ipairs(btfs_args) do
+	for _, v in ipairs(BTFS_ARGS) do
 		table.insert(args, v)
 	end
 	table.insert(args, url)
@@ -290,7 +293,7 @@ mp.add_hook("on_load", 11, function()
 		return
 	end
 
-	local mountpoint = (mountdir .. "/" .. dirname)
+	local mountpoint = (MOUNT_DIR .. "/" .. dirname)
 
 	msg.verbose("using mountpoint " .. mountpoint)
 
