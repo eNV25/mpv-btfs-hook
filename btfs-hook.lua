@@ -246,14 +246,15 @@ end
 local do_mount = function(url, mountpoint)
 	mp.command_native({ name = "subprocess", args = { "mkdir", "-p", mountpoint } })
 
-	local args = { "btfs" }
-	for _, v in ipairs(BTFS_ARGS) do
-		table.insert(args, v)
+	if not is_mounted(mountpoint) then
+		local args = { "btfs" }
+		for _, v in ipairs(BTFS_ARGS) do
+			table.insert(args, v)
+		end
+		table.insert(args, url)
+		table.insert(args, mountpoint)
+		mp.command_native({ name = "subprocess", args = args })
 	end
-	table.insert(args, url)
-	table.insert(args, mountpoint)
-
-	mp.command_native({ name = "subprocess", args = args })
 
 	msg.verbose("waiting for files")
 
@@ -293,15 +294,13 @@ mp.add_hook("on_load", 11, function()
 		return
 	end
 
-	local mountpoint = (MOUNT_DIR .. "/" .. dirname)
+	local mountpoint = MOUNT_DIR .. "/" .. dirname
 
 	msg.verbose("using mountpoint " .. mountpoint)
 
-	if not is_mounted(mountpoint) then
-		if not do_mount(url, mountpoint) then
-			msg.error("mount failed!")
-			return
-		end
+	if not do_mount(url, mountpoint) then
+		msg.error("mount failed!")
+		return
 	end
 
 	local files = list_files(mountpoint)
