@@ -11,7 +11,8 @@ One reason you might want to use this script over calling the included
 `btplay -p mpv` is that you can start mpv with a playlist of multiple
 magnet links or add magnet links to the playlist of an already open mpv
 window (e.g. using one of the scripts that allow appending a link from
-the clipboard to the playlist).
+the clipboard to the playlist). It also works with the [ff2mpv](https://github.com/woodruffw/ff2mpv)
+browser extension, so magnet links can be opened in mpv easily.
 
 # Requirements
 
