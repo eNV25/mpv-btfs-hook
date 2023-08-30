@@ -33,13 +33,9 @@ local BTFS_ARGS = {
 
 local MOUNT_DIR = "/tmp/mpvbtfs"
 
---------------------------------------------------------------------------------
-
 local mp = require("mp")
 local utils = require("mp.utils")
 local msg = require("mp.msg")
-
---------------------------------------------------------------------------------
 
 -- mountpoints mounted by us (will be unmounted on shutdown)
 local mounted_points = {}
@@ -89,13 +85,6 @@ local do_mount = function(url, mountpoint)
 		mp.command_native({ name = "subprocess", args = { "sleep", "0.25" } })
 	end
 	return false
-end
-
---------------------------------------------------------------------------------
-
--- gets the info hash or torrent filename for use as the mount directory name
-local parse_url = function(url)
-	return url:match("^magnet:.*[?&]xt=urn:bt[im]h:(%w*)&?") or (url:match("^.*%.torrent$") and url:gsub("/", "⧸"))
 end
 
 local btfs_hook = function(url, dirname)
