@@ -56,8 +56,12 @@ end
 
 local do_unmount = function(url, mountpoint)
 	mounted_points[url] = nil
-	mp.command_native({ name = "subprocess", args = { "umount", mountpoint }, playback_only = false })
-	mp.command_native({ name = "subprocess", args = { "rmdir", mountpoint }, playback_only = false })
+	mp.command_native({
+		name = "subprocess",
+		detach = true,
+		playback_only = false,
+		args = { "sh", "-c", [[ sleep 1; umount "$1"; rmdir "$1" ]], "sh", mountpoint },
+	})
 end
 
 local do_mount = function(url, mountpoint)
@@ -94,29 +98,33 @@ local parse_url = function(url)
 	return url:match("^magnet:.*[?&]xt=urn:bt[im]h:(%w*)&?") or (url:match("^.*%.torrent$") and url:gsub("/", "⧸"))
 end
 
-mp.add_hook("on_load", 11, function()
-	local url = mp.get_property("stream-open-filename")
-	if not url then
-		return
-	end
-
+local btfs_hook = function(url, dirname)
 	msg.verbose("using url " .. url)
-
-	local dirname = parse_url(url)
-	if not dirname then
-		return
-	end
-
 	local mountpoint = MOUNT_DIR .. "/" .. dirname
-
 	msg.verbose("using mountpoint " .. mountpoint)
-
 	if not do_mount(url, mountpoint) then
 		msg.error("mount failed!")
 		return
 	end
-
 	mp.set_property("stream-open-filename", mountpoint)
+end
+
+mp.add_hook("on_load", 9, function()
+	local url = mp.get_property("stream-open-filename")
+	local dirname = url:match("^magnet:.*[?&]xt=urn:bt[im]h:(%w*)&?")
+	if not dirname then
+		return
+	end
+	btfs_hook(url, dirname)
+end)
+
+mp.add_hook("on_load_fail", 9, function()
+	local url = mp.get_property("stream-open-filename")
+	local dirname = url:match("^.*%.torrent$") and url:gsub('[<>:"/\\|?*]', "⧸")
+	if not dirname then
+		return
+	end
+	btfs_hook(url, dirname)
 end)
 
 mp.register_event("shutdown", function()

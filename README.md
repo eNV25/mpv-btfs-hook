@@ -23,6 +23,7 @@ browser extension, so magnet links can be opened in mpv easily.
 - rmdir
 - mkdir -p
 - sleep
+- sh
 
 # Advantages Over Peerflix and Webtorrent
 
